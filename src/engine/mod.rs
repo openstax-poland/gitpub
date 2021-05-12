@@ -11,6 +11,9 @@ pub trait Engine {
 
     /// Package version
     fn pkg_version(&self) -> String;
+
+    /// Prepare the package for publishing
+    fn prepare(&mut self) -> Result<()>;
 }
 
 /// Select the most appropriate engine
