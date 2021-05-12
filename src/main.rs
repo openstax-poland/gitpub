@@ -1,3 +1,4 @@
+use anyhow::Result;
 use argh::FromArgs;
 
 /// Publish package as a GIT tag
@@ -5,6 +6,8 @@ use argh::FromArgs;
 struct Args {
 }
 
-fn main() {
+fn main() -> Result<()> {
     let args: Args = argh::from_env();
+
+    Ok(())
 }
