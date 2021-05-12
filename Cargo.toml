@@ -6,4 +6,5 @@ edition = "2018"
 [dependencies]
 anyhow = "1.0"
 argh = "0.1"
+json = "0.12"
 termion = "1.0"
