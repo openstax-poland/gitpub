@@ -6,3 +6,4 @@ edition = "2018"
 [dependencies]
 anyhow = "1.0"
 argh = "0.1"
+termion = "1.0"

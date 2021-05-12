@@ -1,6 +1,14 @@
 use anyhow::{Result, bail};
 
 pub trait Engine {
+    /// Engine name
+    fn name(&self) -> String;
+
+    /// Package name
+    fn pkg_name(&self) -> String;
+
+    /// Package version
+    fn pkg_version(&self) -> String;
 }
 
 /// Select the most appropriate engine
