@@ -19,6 +19,9 @@ pub trait Engine {
 
     /// Add files to the package
     fn pack(&mut self, pkg: &mut Package) -> Result<()>;
+
+    /// Clean project after successful publish
+    fn clean(&mut self) -> Result<()>;
 }
 
 /// Select the most appropriate engine

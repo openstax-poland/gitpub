@@ -179,6 +179,10 @@ impl<C: Client> Engine for JavaScript<C> {
 
         Ok(())
     }
+
+    fn clean(&mut self) -> Result<()> {
+        C::postpublish(self)
+    }
 }
 
 /// npm client
@@ -190,6 +194,8 @@ pub trait Client: Sized {
     fn archive_name(engine: &JavaScript<Self>) -> String;
 
     fn archive_prefix(engine: &JavaScript<Self>) -> String;
+
+    fn postpublish(engine: &JavaScript<Self>) -> Result<()>;
 }
 
 pub struct Npm;
@@ -211,6 +217,12 @@ impl Client for Npm {
 
     fn archive_prefix(_: &JavaScript<Self>) -> String {
         String::from("package")
+    }
+
+    fn postpublish(engine: &JavaScript<Self>) -> Result<()> {
+        engine.run_script("npm", "publish")?;
+        engine.run_script("npm", "postpublish")?;
+        Ok(())
     }
 }
 
@@ -234,6 +246,12 @@ impl Client for Yarn {
     fn archive_prefix(_: &JavaScript<Self>) -> String {
         String::from("package")
     }
+
+    fn postpublish(engine: &JavaScript<Self>) -> Result<()> {
+        engine.run_script("npm", "publish")?;
+        engine.run_script("npm", "postpublish")?;
+        Ok(())
+    }
 }
 
 pub struct Yarn2;
@@ -252,5 +270,9 @@ impl Client for Yarn2 {
 
     fn archive_prefix(_: &JavaScript<Self>) -> String {
         String::from("package")
+    }
+
+    fn postpublish(engine: &JavaScript<Self>) -> Result<()> {
+        Ok(())
     }
 }
