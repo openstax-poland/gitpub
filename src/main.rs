@@ -1,8 +1,11 @@
+#![feature(map_first_last)]
+
 use anyhow::Result;
 use argh::FromArgs;
 use std::fmt;
 
 mod engine;
+mod package;
 mod util;
 
 /// Publish package as a GIT tag
