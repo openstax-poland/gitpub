@@ -38,17 +38,16 @@ fn main() -> Result<()> {
     println!("{}       Using{} {}", S, R, engine.name());
     let name = engine.pkg_name();
     let version = engine.pkg_version();
-    println!("{}   Packaging{} {} {}", S, R, name, version);
 
-    println!("{}   Preparing{}", S, R);
+    println!("{}   Preparing{} {} {}", S, R, name, version);
     engine.prepare()?;
 
-    println!("{}     Packing{}", S, R);
+    println!("{}{}   Packaging{}", termion::cursor::Up(1), S, R);
     let mut package = package::Package::new(&repo)?;
     engine.pack(&mut package)?;
     let tree = package.finish()?;
 
-    println!("{}  Committing{} release", S, R);
+    println!("{}{}  Committing{}", termion::cursor::Up(1), S, R);
     let author = repo.signature()?;
     let committer = Signature::now("gitpub", "gitpub")?;
     let message = format!("Publish {} {}", name, version);
@@ -59,13 +58,15 @@ fn main() -> Result<()> {
     repo.tag(&tag_name, &commit, &committer, &message, false)?;
 
     if !args.no_publish {
-        println!("{}   Uploading{} {}", S, R, tag_name);
+        println!("{}{}   Uploading{}", termion::cursor::Up(1), S, R);
         Command::new("git").args(&["push", "origin", &tag_name]).output()?.exit_on_fail()?;
     }
 
     if !args.keep_tag {
         repo.tag_delete(&tag_name)?;
     }
+
+    println!("{}{}    Released{} {} {} as {}", termion::cursor::Up(1), S, R, name, version, tag_name);
 
     Ok(())
 }
