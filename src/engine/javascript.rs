@@ -241,7 +241,8 @@ pub struct Yarn2;
 impl Client for Yarn2 {
     const NAME: &'static str = "Yarn 2";
 
-    fn prepare(_: &JavaScript<Self>) -> Result<()> {
+    fn prepare(engine: &JavaScript<Self>) -> Result<()> {
+        engine.run_script("yarn", "prepublish")?;
         Command::new("yarn").arg("pack").output()?.exit_on_fail()
     }
 
