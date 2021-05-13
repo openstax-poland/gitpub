@@ -17,6 +17,12 @@ struct Args {
     /// select engine
     #[argh(option)]
     engine: Option<String>,
+    /// do not push tag to repository
+    #[argh(switch)]
+    no_publish: bool,
+    /// keep tag after publishing
+    #[argh(switch)]
+    keep_tag: bool,
 }
 
 fn main() -> Result<()> {
@@ -52,9 +58,14 @@ fn main() -> Result<()> {
     let commit = repo.find_object(commit, Some(ObjectType::Commit))?;
     repo.tag(&tag_name, &commit, &committer, &message, false)?;
 
-    println!("{}   Uploading{} {}", S, R, tag_name);
-    Command::new("git").args(&["push", "origin", &tag_name]).output()?.exit_on_fail()?;
-    repo.tag_delete(&tag_name)?;
+    if !args.no_publish {
+        println!("{}   Uploading{} {}", S, R, tag_name);
+        Command::new("git").args(&["push", "origin", &tag_name]).output()?.exit_on_fail()?;
+    }
+
+    if !args.keep_tag {
+        repo.tag_delete(&tag_name)?;
+    }
 
     Ok(())
 }
