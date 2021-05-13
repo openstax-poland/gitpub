@@ -97,6 +97,14 @@ impl<C> JavaScript<C> {
         Ok(())
     }
 
+    fn run_script(&self, client: &str, script: &str) -> Result<()> {
+        if self.pkg.get("scripts").map_or(false, |scripts| scripts.has_key(script)) {
+            Command::new(client).arg(script).output()?.exit_on_fail()?;
+        }
+
+        Ok(())
+    }
+
     /// Adjust `package.json` for release
     fn adjust_pkg(&self, data: &mut Vec<u8>) -> Result<()> {
         let mut pkg = json::parse(std::str::from_utf8(&data)?)?;
@@ -144,7 +152,7 @@ impl<C: Client> Engine for JavaScript<C> {
     }
 
     fn prepare(&mut self) -> Result<()> {
-        C::prepare()?;
+        C::prepare(self)?;
         self.read_pkg()?;
         Ok(())
     }
@@ -174,10 +182,10 @@ impl<C: Client> Engine for JavaScript<C> {
 }
 
 /// npm client
-pub trait Client {
+pub trait Client: Sized {
     const NAME: &'static str;
 
-    fn prepare() -> Result<()>;
+    fn prepare(engine: &JavaScript<Self>) -> Result<()>;
 
     fn archive_name(engine: &JavaScript<Self>) -> String;
 
@@ -189,10 +197,11 @@ pub struct Npm;
 impl Client for Npm {
     const NAME: &'static str = "Npm";
 
-    fn prepare() -> Result<()> {
-        Command::new("npm").arg("prepublish").output()?.exit_on_fail()?;
-        Command::new("npm").arg("prepublishOnly").output()?.exit_on_fail()?;
-        Command::new("npm").arg("prepare").output()?.exit_on_fail()?;
+    fn prepare(engine: &JavaScript<Self>) -> Result<()> {
+        engine.run_script("npm", "prepublish")?;
+        engine.run_script("npm", "prepublishOnly")?;
+        engine.run_script("npm", "prepare")?;
+        Command::new("npm").arg("pack").output()?.exit_on_fail()?;
         Ok(())
     }
 
@@ -210,10 +219,11 @@ pub struct Yarn;
 impl Client for Yarn {
     const NAME: &'static str = "Yarn";
 
-    fn prepare() -> Result<()> {
-        Command::new("yarn").arg("prepublish").output()?.exit_on_fail()?;
-        Command::new("yarn").arg("prepublishOnly").output()?.exit_on_fail()?;
-        Command::new("yarn").arg("prepare").output()?.exit_on_fail()?;
+    fn prepare(engine: &JavaScript<Self>) -> Result<()> {
+        engine.run_script("yarn", "prepublish")?;
+        engine.run_script("yarn", "prepublishOnly")?;
+        engine.run_script("yarn", "prepare")?;
+        Command::new("yarn").arg("pack").output()?.exit_on_fail()?;
         Ok(())
     }
 
@@ -231,7 +241,7 @@ pub struct Yarn2;
 impl Client for Yarn2 {
     const NAME: &'static str = "Yarn 2";
 
-    fn prepare() -> Result<()> {
+    fn prepare(_: &JavaScript<Self>) -> Result<()> {
         Command::new("yarn").arg("pack").output()?.exit_on_fail()
     }
 
