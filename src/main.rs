@@ -3,7 +3,9 @@
 use anyhow::Result;
 use argh::FromArgs;
 use git2::{ObjectType, Repository, Signature};
-use std::fmt;
+use std::{fmt, process::Command};
+
+use crate::util::OutputEx;
 
 mod engine;
 mod package;
@@ -48,7 +50,11 @@ fn main() -> Result<()> {
     let tree = repo.find_tree(tree)?;
     let commit = repo.commit(None, &author, &committer, &message, &tree, &[])?;
     let commit = repo.find_object(commit, Some(ObjectType::Commit))?;
-    let tag = repo.tag(&tag_name, &commit, &committer, &message, false)?;
+    repo.tag(&tag_name, &commit, &committer, &message, false)?;
+
+    println!("{}   Uploading{} {}", S, R, tag_name);
+    Command::new("git").args(&["push", "origin", &tag_name]).output()?.exit_on_fail()?;
+    repo.tag_delete(&tag_name)?;
 
     Ok(())
 }
