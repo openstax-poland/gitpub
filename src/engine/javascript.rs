@@ -199,8 +199,8 @@ impl Client for Npm {
 
     fn prepare(engine: &JavaScript<Self>) -> Result<()> {
         engine.run_script("npm", "prepublish")?;
-        engine.run_script("npm", "prepublishOnly")?;
         engine.run_script("npm", "prepare")?;
+        engine.run_script("npm", "prepublishOnly")?;
         Command::new("npm").arg("pack").output()?.exit_on_fail()?;
         Ok(())
     }
@@ -221,8 +221,8 @@ impl Client for Yarn {
 
     fn prepare(engine: &JavaScript<Self>) -> Result<()> {
         engine.run_script("yarn", "prepublish")?;
-        engine.run_script("yarn", "prepublishOnly")?;
         engine.run_script("yarn", "prepare")?;
+        engine.run_script("yarn", "prepublishOnly")?;
         Command::new("yarn").arg("pack").output()?.exit_on_fail()?;
         Ok(())
     }
