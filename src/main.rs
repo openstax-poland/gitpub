@@ -2,7 +2,7 @@
 
 use anyhow::Result;
 use argh::FromArgs;
-use git2::Repository;
+use git2::{ObjectType, Repository, Signature};
 use std::fmt;
 
 mod engine;
@@ -28,7 +28,9 @@ fn main() -> Result<()> {
     let repo = Repository::open_from_env()?;
 
     println!("{}       Using{} {}", S, R, engine.name());
-    println!("{}   Packaging{} {} {}", S, R, engine.pkg_name(), engine.pkg_version());
+    let name = engine.pkg_name();
+    let version = engine.pkg_version();
+    println!("{}   Packaging{} {} {}", S, R, name, version);
 
     println!("{}   Preparing{}", S, R);
     engine.prepare()?;
@@ -37,6 +39,16 @@ fn main() -> Result<()> {
     let mut package = package::Package::new(&repo)?;
     engine.pack(&mut package)?;
     let tree = package.finish()?;
+
+    println!("{}  Committing{} release", S, R);
+    let author = repo.signature()?;
+    let committer = Signature::now("gitpub", "gitpub")?;
+    let message = format!("Publish {} {}", name, version);
+    let tag_name = format!("gitpub/{}@{}", name, version);
+    let tree = repo.find_tree(tree)?;
+    let commit = repo.commit(None, &author, &committer, &message, &tree, &[])?;
+    let commit = repo.find_object(commit, Some(ObjectType::Commit))?;
+    let tag = repo.tag(&tag_name, &commit, &committer, &message, false)?;
 
     Ok(())
 }
