@@ -2,6 +2,7 @@
 
 use anyhow::Result;
 use argh::FromArgs;
+use git2::Repository;
 use std::fmt;
 
 mod engine;
@@ -24,11 +25,18 @@ fn main() -> Result<()> {
         None => engine::select()?,
     };
 
+    let repo = Repository::open_from_env()?;
+
     println!("{}       Using{} {}", S, R, engine.name());
     println!("{}   Packaging{} {} {}", S, R, engine.pkg_name(), engine.pkg_version());
 
     println!("{}   Preparing{}", S, R);
     engine.prepare()?;
+
+    println!("{}     Packing{}", S, R);
+    let mut package = package::Package::new(&repo)?;
+    engine.pack(&mut package)?;
+    let tree = package.finish()?;
 
     Ok(())
 }

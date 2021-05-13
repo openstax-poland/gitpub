@@ -1,5 +1,7 @@
 use anyhow::{Result, bail};
 
+use crate::package::Package;
+
 mod javascript;
 
 pub trait Engine {
@@ -14,6 +16,9 @@ pub trait Engine {
 
     /// Prepare the package for publishing
     fn prepare(&mut self) -> Result<()>;
+
+    /// Add files to the package
+    fn pack(&mut self, pkg: &mut Package) -> Result<()>;
 }
 
 /// Select the most appropriate engine

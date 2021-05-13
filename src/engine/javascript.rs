@@ -1,10 +1,17 @@
 use anyhow::{Context, Result, bail};
 use json::{JsonValue, object::Object};
-use std::{fs, path::PathBuf, process::Command};
+use std::{fs::{self, File}, path::PathBuf, process::Command};
 
-use crate::util::OutputEx;
+use crate::{package::Package, util::OutputEx};
 
 use super::Engine;
+
+/// Fields to remove from package.json
+const REMOVE_FIELDS: &[&str] = &[
+    "devDependencies",
+    "scripts",
+    "workspaces",
+];
 
 /// Select appropriate engine for a JavaScript project
 pub fn select(path: PathBuf) -> Result<Box<dyn Engine>> {
@@ -89,6 +96,20 @@ impl<C> JavaScript<C> {
 
         Ok(())
     }
+
+    /// Adjust `package.json` for release
+    fn adjust_pkg(&self, data: &mut Vec<u8>) -> Result<()> {
+        let mut pkg = json::parse(std::str::from_utf8(&data)?)?;
+
+        for key in REMOVE_FIELDS {
+            pkg.remove(key);
+        }
+
+        data.clear();
+        pkg.write_pretty(data, 2)?;
+
+        Ok(())
+    }
 }
 
 impl JavaScript<Npm> {
@@ -127,6 +148,29 @@ impl<C: Client> Engine for JavaScript<C> {
         self.read_pkg()?;
         Ok(())
     }
+
+    fn pack(&mut self, pkg: &mut Package) -> Result<()> {
+        let archive = C::archive_name(self);
+        let prefix = C::archive_prefix(self);
+        let tar = File::open(&archive)?;
+
+        pkg.add_tar(tar, |path, content| {
+            let path = match path.strip_prefix(prefix.as_bytes()) {
+                Some(path) => path,
+                None => return Ok(None),
+            };
+
+            if path == b"package.json" || path == b"/package.json" {
+                self.adjust_pkg(content)?;
+            }
+
+            Ok(Some(path))
+        })?;
+
+        fs::remove_file(self.path.parent().unwrap().join(&archive))?;
+
+        Ok(())
+    }
 }
 
 /// npm client
@@ -134,6 +178,10 @@ pub trait Client {
     const NAME: &'static str;
 
     fn prepare() -> Result<()>;
+
+    fn archive_name(engine: &JavaScript<Self>) -> String;
+
+    fn archive_prefix(engine: &JavaScript<Self>) -> String;
 }
 
 pub struct Npm;
@@ -146,6 +194,14 @@ impl Client for Npm {
         Command::new("npm").arg("prepublishOnly").output()?.exit_on_fail()?;
         Command::new("npm").arg("prepare").output()?.exit_on_fail()?;
         Ok(())
+    }
+
+    fn archive_name(engine: &JavaScript<Self>) -> String {
+        format!("{}-{}.tgz", engine.name, engine.version)
+    }
+
+    fn archive_prefix(_: &JavaScript<Self>) -> String {
+        String::from("package")
     }
 }
 
@@ -160,6 +216,14 @@ impl Client for Yarn {
         Command::new("yarn").arg("prepare").output()?.exit_on_fail()?;
         Ok(())
     }
+
+    fn archive_name(engine: &JavaScript<Self>) -> String {
+        format!("{}-v{}.tgz", engine.name, engine.version)
+    }
+
+    fn archive_prefix(_: &JavaScript<Self>) -> String {
+        String::from("package")
+    }
 }
 
 pub struct Yarn2;
@@ -169,5 +233,13 @@ impl Client for Yarn2 {
 
     fn prepare() -> Result<()> {
         Command::new("yarn").arg("pack").output()?.exit_on_fail()
+    }
+
+    fn archive_name(_: &JavaScript<Self>) -> String {
+        String::from("package.tgz")
+    }
+
+    fn archive_prefix(_: &JavaScript<Self>) -> String {
+        String::from("package")
     }
 }
