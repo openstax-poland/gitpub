@@ -164,8 +164,8 @@ impl<C: Client> Engine for JavaScript<C> {
 
         pkg.add_tar(tar, |path, content| {
             let path = match path.strip_prefix(prefix.as_bytes()) {
-                Some(path) => path,
-                None => return Ok(None),
+                Some(path) if !path.is_empty() => path,
+                _ => return Ok(None),
             };
 
             if path == b"package.json" || path == b"/package.json" {
