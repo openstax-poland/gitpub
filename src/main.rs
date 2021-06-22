@@ -26,6 +26,8 @@ struct Args {
 }
 
 fn main() -> Result<()> {
+    env_logger::init();
+
     let args: Args = argh::from_env();
 
     let mut engine = match args.engine {

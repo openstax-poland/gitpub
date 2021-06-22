@@ -4,6 +4,8 @@ use git2::{Oid, TreeBuilder, Repository};
 use tar::Archive;
 use std::{collections::BTreeMap, io::Read};
 
+use crate::util;
+
 /// Package builder
 pub struct Package<'a> {
     repo: &'a Repository,
@@ -87,6 +89,8 @@ impl<'a> Package<'a> {
 
     /// Add entry at path
     fn add_entry(&mut self, path: &[u8], content: Oid, mode: i32) -> Result<()> {
+        log::trace!("add_entry path: {:?} content: {} mode: {:o}",
+            util::format_bytes(path), content, mode);
         let (dir, name) = split_path(path);
         let tree = match dir {
             Some(dir) => {
