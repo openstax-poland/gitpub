@@ -36,6 +36,10 @@ pub fn select(path: PathBuf) -> Result<Box<dyn Engine>> {
             return JavaScript::new_in(Yarn2, path);
         }
 
+        if ver.stdout.starts_with(b"3.") {
+            return JavaScript::new_in(Yarn3, path);
+        }
+
         if has_yarn_lock {
             bail!("found unsupported version of Yarn")
         }
@@ -135,6 +139,12 @@ impl JavaScript<Yarn> {
 impl JavaScript<Yarn2> {
     pub fn yarn2() -> Result<Box<dyn Engine>> {
         JavaScript::new(Yarn2)
+    }
+}
+
+impl JavaScript<Yarn3> {
+    pub fn yarn3() -> Result<Box<dyn Engine>> {
+        JavaScript::new(Yarn3)
     }
 }
 
@@ -254,6 +264,7 @@ impl Client for Yarn {
     }
 }
 
+// XXX: Keep in sync with Yarn3
 pub struct Yarn2;
 
 impl Client for Yarn2 {
@@ -269,6 +280,30 @@ impl Client for Yarn2 {
     }
 
     fn archive_prefix(_: &JavaScript<Self>) -> String {
+        String::from("package")
+    }
+
+    fn postpublish(engine: &JavaScript<Self>) -> Result<()> {
+        Ok(())
+    }
+}
+
+pub struct Yarn3;
+
+// XXX: Keep in sync with Yarn2
+impl Client for Yarn3 {
+    const NAME: &'static str = "Yarn 3";
+
+    fn prepare(engine: &JavaScript<Self>) -> Result<()> {
+        engine.run_script("yarn", "prepublish")?;
+        Command::new("yarn").arg("pack").output()?.exit_on_fail()
+    }
+
+    fn archive_name(engine: &JavaScript<Self>) -> String {
+        String::from("package.tgz")
+    }
+
+    fn archive_prefix(engine: &JavaScript<Self>) -> String {
         String::from("package")
     }
 
