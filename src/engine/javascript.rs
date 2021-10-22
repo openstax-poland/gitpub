@@ -2,7 +2,7 @@ use anyhow::{Context, Result, bail};
 use json::{JsonValue, object::Object};
 use std::{fs::{self, File}, path::PathBuf, process::Command};
 
-use crate::{package::Package, util::OutputEx};
+use crate::{package::Package, util::CommandEx};
 
 use super::Engine;
 
@@ -103,7 +103,7 @@ impl<C> JavaScript<C> {
 
     fn run_script(&self, client: &str, script: &str) -> Result<()> {
         if self.pkg.get("scripts").map_or(false, |scripts| scripts.has_key(script)) {
-            Command::new(client).arg(script).output()?.exit_on_fail()?;
+            Command::new(client).arg(script).wait_or_fail()?;
         }
 
         Ok(())
@@ -217,7 +217,7 @@ impl Client for Npm {
         engine.run_script("npm", "prepublish")?;
         engine.run_script("npm", "prepare")?;
         engine.run_script("npm", "prepublishOnly")?;
-        Command::new("npm").arg("pack").output()?.exit_on_fail()?;
+        Command::new("npm").arg("pack").wait_or_fail()?;
         Ok(())
     }
 
@@ -245,7 +245,7 @@ impl Client for Yarn {
         engine.run_script("yarn", "prepublish")?;
         engine.run_script("yarn", "prepare")?;
         engine.run_script("yarn", "prepublishOnly")?;
-        Command::new("yarn").arg("pack").output()?.exit_on_fail()?;
+        Command::new("yarn").arg("pack").wait_or_fail()?;
         Ok(())
     }
 
@@ -272,7 +272,7 @@ impl Client for Yarn2 {
 
     fn prepare(engine: &JavaScript<Self>) -> Result<()> {
         engine.run_script("yarn", "prepublish")?;
-        Command::new("yarn").arg("pack").output()?.exit_on_fail()
+        Command::new("yarn").arg("pack").wait_or_fail()
     }
 
     fn archive_name(_: &JavaScript<Self>) -> String {
@@ -296,7 +296,7 @@ impl Client for Yarn3 {
 
     fn prepare(engine: &JavaScript<Self>) -> Result<()> {
         engine.run_script("yarn", "prepublish")?;
-        Command::new("yarn").arg("pack").output()?.exit_on_fail()
+        Command::new("yarn").arg("pack").wait_or_fail()
     }
 
     fn archive_name(engine: &JavaScript<Self>) -> String {

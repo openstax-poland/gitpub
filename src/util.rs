@@ -1,16 +1,25 @@
 use anyhow::Result;
-use std::{fmt, process::Output};
+use std::{fmt, process::Command};
 
-pub trait OutputEx {
-    fn exit_on_fail(self) -> Result<()>;
+pub trait CommandEx {
+    /// Wait for command to complete successfully
+    fn wait_or_fail(&mut self) -> Result<()>;
 }
 
-impl OutputEx for Output {
-    fn exit_on_fail(self) -> Result<()> {
-        if !self.status.success() {
-            let err = String::from_utf8(self.stderr)?;
-            eprintln!("{}", err);
-            std::process::exit(self.status.code().unwrap_or(1));
+impl CommandEx for Command {
+    fn wait_or_fail(&mut self) -> Result<()> {
+        if crate::output::is_verbose() {
+            let status = self.status()?;
+            if !status.success() {
+                std::process::exit(status.code().unwrap_or(1));
+            }
+        } else {
+            let out = self.output()?;
+            if !out.status.success() {
+                let err = String::from_utf8(out.stderr)?;
+                eprintln!("{}", err);
+                std::process::exit(out.status.code().unwrap_or(1));
+            }
         }
 
         Ok(())

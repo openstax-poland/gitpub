@@ -5,9 +5,10 @@ use argh::FromArgs;
 use git2::{ObjectType, Repository, Signature};
 use std::{fmt, process::Command};
 
-use crate::util::OutputEx;
+use crate::util::CommandEx;
 
 mod engine;
+mod output;
 mod package;
 mod util;
 
@@ -23,12 +24,16 @@ struct Args {
     /// keep tag after publishing
     #[argh(switch)]
     keep_tag: bool,
+    /// show verbose output
+    #[argh(switch, short = 'v')]
+    verbose: bool,
 }
 
 fn main() -> Result<()> {
     env_logger::init();
 
     let args: Args = argh::from_env();
+    let _out = output::init(args.verbose);
 
     let mut engine = match args.engine {
         Some(ref name) => engine::by_name(name)?,
@@ -37,19 +42,20 @@ fn main() -> Result<()> {
 
     let repo = Repository::open_from_env()?;
 
-    println!("{}       Using{} {}", S, R, engine.name());
+    output::message("Using", engine.name())?;
     let name = engine.pkg_name();
     let version = engine.pkg_version();
 
-    println!("{}   Preparing{} {} {}", S, R, name, version);
+    let status = format!("{} {}", name, version);
+    output::message("Preparing", &status)?;
     engine.prepare()?;
 
-    println!("{}{}   Packaging{}", termion::cursor::Up(1), S, R);
+    output::update("Packaging", &status)?;
     let mut package = package::Package::new(&repo)?;
     engine.pack(&mut package)?;
     let tree = package.finish()?;
 
-    println!("{}{}  Committing{}", termion::cursor::Up(1), S, R);
+    output::update("Committing", &status)?;
     let author = repo.signature()?;
     let committer = Signature::now("gitpub", "gitpub")?;
     let message = format!("Publish {} {}", name, version);
@@ -60,15 +66,15 @@ fn main() -> Result<()> {
     repo.tag(&tag_name, &commit, &committer, &message, false)?;
 
     if !args.no_publish {
-        println!("{}{}   Uploading{}", termion::cursor::Up(1), S, R);
-        Command::new("git").args(&["push", "origin", &tag_name]).output()?.exit_on_fail()?;
+        output::update("Uploading", &status)?;
+        Command::new("git").args(&["push", "origin", &tag_name]).wait_or_fail()?;
     }
 
     if !args.keep_tag {
         repo.tag_delete(&tag_name)?;
     }
 
-    println!("{}{}    Released{} {} {} as {}", termion::cursor::Up(1), S, R, name, version, tag_name);
+    output::update("Released", format!("{} {} as {}", name, version, tag_name))?;
 
     Ok(())
 }
