@@ -1,5 +1,3 @@
-#![feature(map_first_last)]
-
 use anyhow::Result;
 use argh::FromArgs;
 use git2::{ObjectType, Repository, Signature};
@@ -33,7 +31,7 @@ fn main() -> Result<()> {
     env_logger::init();
 
     let args: Args = argh::from_env();
-    let _out = output::init(args.verbose);
+    output::init(args.verbose);
 
     let mut engine = match args.engine {
         Some(ref name) => engine::by_name(name)?,
@@ -46,7 +44,7 @@ fn main() -> Result<()> {
     let name = engine.pkg_name();
     let version = engine.pkg_version();
 
-    let status = format!("{} {}", name, version);
+    let status = format!("{name} {version}");
     output::message("Preparing", &status)?;
     engine.prepare()?;
 
@@ -58,8 +56,8 @@ fn main() -> Result<()> {
     output::update("Committing", &status)?;
     let author = repo.signature()?;
     let committer = Signature::now("gitpub", "gitpub")?;
-    let message = format!("Publish {} {}", name, version);
-    let tag_name = format!("gitpub/{}@{}", name, version);
+    let message = format!("Publish {name} {version}");
+    let tag_name = format!("gitpub/{name}@{version}");
     let tree = repo.find_tree(tree)?;
     let commit = repo.commit(None, &author, &committer, &message, &tree, &[])?;
     let commit = repo.find_object(commit, Some(ObjectType::Commit))?;
@@ -67,14 +65,14 @@ fn main() -> Result<()> {
 
     if !args.no_publish {
         output::update("Uploading", &status)?;
-        Command::new("git").args(&["push", "origin", &tag_name]).wait_or_fail()?;
+        Command::new("git").args(["push", "origin", &tag_name]).wait_or_fail()?;
     }
 
     if !args.keep_tag {
         repo.tag_delete(&tag_name)?;
     }
 
-    output::update("Released", format!("{} {} as {}", name, version, tag_name))?;
+    output::update("Released", format!("{name} {version} as {tag_name}"))?;
 
     Ok(())
 }

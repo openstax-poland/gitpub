@@ -17,7 +17,7 @@ impl CommandEx for Command {
             let out = self.output()?;
             if !out.status.success() {
                 let err = String::from_utf8(out.stderr)?;
-                eprintln!("{}", err);
+                eprintln!("{err}");
                 std::process::exit(out.status.code().unwrap_or(1));
             }
         }
@@ -37,7 +37,7 @@ pub fn format_bytes(bytes: &[u8]) -> impl fmt::Debug + '_ {
                 if b.is_ascii_graphic() {
                     write!(f, "{}", b as char)?;
                 } else {
-                    write!(f, "\\x{:02x}", b)?;
+                    write!(f, "\\x{b:02x}")?;
                 }
             }
 

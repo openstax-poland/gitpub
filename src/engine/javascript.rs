@@ -63,6 +63,7 @@ pub struct JavaScript<C> {
 }
 
 impl<C: Client + 'static> JavaScript<C> {
+    #[allow(clippy::new_ret_no_self)]
     fn new(_client: C) -> Result<Box<dyn Engine>> {
         Self::new_in(_client, std::env::current_dir()?.join("package.json"))
     }
@@ -111,7 +112,7 @@ impl<C> JavaScript<C> {
 
     /// Adjust `package.json` for release
     fn adjust_pkg(&self, data: &mut Vec<u8>) -> Result<()> {
-        let mut pkg = json::parse(std::str::from_utf8(&data)?)?;
+        let mut pkg = json::parse(std::str::from_utf8(data)?)?;
 
         for key in REMOVE_FIELDS {
             pkg.remove(key);
@@ -283,7 +284,7 @@ impl Client for Yarn2 {
         String::from("package")
     }
 
-    fn postpublish(engine: &JavaScript<Self>) -> Result<()> {
+    fn postpublish(_engine: &JavaScript<Self>) -> Result<()> {
         Ok(())
     }
 }
@@ -299,15 +300,15 @@ impl Client for Yarn3 {
         Command::new("yarn").arg("pack").wait_or_fail()
     }
 
-    fn archive_name(engine: &JavaScript<Self>) -> String {
+    fn archive_name(_engine: &JavaScript<Self>) -> String {
         String::from("package.tgz")
     }
 
-    fn archive_prefix(engine: &JavaScript<Self>) -> String {
+    fn archive_prefix(_engine: &JavaScript<Self>) -> String {
         String::from("package")
     }
 
-    fn postpublish(engine: &JavaScript<Self>) -> Result<()> {
+    fn postpublish(_engine: &JavaScript<Self>) -> Result<()> {
         Ok(())
     }
 }

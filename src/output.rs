@@ -1,5 +1,5 @@
-use std::{fmt::Display, io::{self, Write, stdout}, sync::atomic::{AtomicBool, Ordering}};
-use termion::{clear, color::{self, LightGreen}, cursor, style::{self, Bold}};
+use std::{fmt::Display, io::{self, Write}, sync::atomic::{AtomicBool, Ordering}};
+use termion::{color::{self, LightGreen}, cursor, style::{self, Bold}};
 
 /// Whether we're using verbose output or not
 static VERBOSE: AtomicBool = AtomicBool::new(false);
