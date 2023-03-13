@@ -19,9 +19,9 @@ struct Args {
     /// do not push tag to repository
     #[argh(switch)]
     no_publish: bool,
-    /// keep tag after publishing
+    /// delete tag after publishing
     #[argh(switch)]
-    keep_tag: bool,
+    delete_tag: bool,
     /// show verbose output
     #[argh(switch, short = 'v')]
     verbose: bool,
@@ -68,7 +68,7 @@ fn main() -> Result<()> {
         Command::new("git").args(["push", "origin", &tag_name]).wait_or_fail()?;
     }
 
-    if !args.keep_tag {
+    if args.delete_tag {
         repo.tag_delete(&tag_name)?;
     }
 
