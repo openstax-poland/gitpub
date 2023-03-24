@@ -25,6 +25,9 @@ struct Args {
     /// show verbose output
     #[argh(switch, short = 'v')]
     verbose: bool,
+    /// keep build artefacts
+    #[argh(switch)]
+    keep_artefacts: bool,
 }
 
 fn main() -> Result<()> {
@@ -33,9 +36,14 @@ fn main() -> Result<()> {
     let args: Args = argh::from_env();
     output::init(args.verbose);
 
+    let engine_options = engine::Options {
+        keep_artefacts: args.keep_artefacts,
+        ..Default::default()
+    };
+
     let mut engine = match args.engine {
-        Some(ref name) => engine::by_name(name)?,
-        None => engine::select()?,
+        Some(ref name) => engine::by_name(name, engine_options)?,
+        None => engine::select(engine_options)?,
     };
 
     let repo = Repository::open_from_env()?;

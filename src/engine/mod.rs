@@ -24,26 +24,32 @@ pub trait Engine {
     fn clean(&mut self) -> Result<()>;
 }
 
+#[derive(Default)]
+pub struct Options {
+    /// Keep build artefacts
+    pub keep_artefacts: bool,
+}
+
 /// Select the most appropriate engine
-pub fn select() -> Result<Box<dyn Engine>> {
+pub fn select(options: Options) -> Result<Box<dyn Engine>> {
     let mut path = std::env::current_dir()?;
 
     path.push("package.json");
     if path.exists() {
-        return javascript::select(path);
+        return javascript::select(path, options);
     }
 
     bail!("could not select engine, please specify it via --engine")
 }
 
 /// Select engine by name
-pub fn by_name(name: &str) -> Result<Box<dyn Engine>> {
+pub fn by_name(name: &str, options: Options) -> Result<Box<dyn Engine>> {
     match name {
-        "npm" => javascript::JavaScript::npm(),
-        "yarn" => javascript::JavaScript::yarn(),
-        "yarn2" | "yarn-2" => javascript::JavaScript::yarn2(),
-        "yarn3" | "yarn-3" => javascript::JavaScript::yarn3(),
-        "yarn-berry" => javascript::JavaScript::yarn3(),
+        "npm" => javascript::JavaScript::npm(options),
+        "yarn" => javascript::JavaScript::yarn(options),
+        "yarn2" | "yarn-2" => javascript::JavaScript::yarn2(options),
+        "yarn3" | "yarn-3" => javascript::JavaScript::yarn3(options),
+        "yarn-berry" => javascript::JavaScript::yarn3(options),
         _ => bail!("no engine named {}", name),
     }
 }

@@ -4,7 +4,7 @@ use std::{fs::{self, File}, path::PathBuf, process::Command};
 
 use crate::{package::Package, util::CommandEx};
 
-use super::Engine;
+use super::{Engine, Options};
 
 /// Fields to remove from package.json
 const REMOVE_FIELDS: &[&str] = &[
@@ -14,7 +14,7 @@ const REMOVE_FIELDS: &[&str] = &[
 ];
 
 /// Select appropriate engine for a JavaScript project
-pub fn select(path: PathBuf) -> Result<Box<dyn Engine>> {
+pub fn select(path: PathBuf, options: Options) -> Result<Box<dyn Engine>> {
     let mut lock = path.parent().unwrap().join("yarn.lock");
 
     let has_yarn_lock = lock.exists();
@@ -29,15 +29,15 @@ pub fn select(path: PathBuf) -> Result<Box<dyn Engine>> {
         let ver = Command::new("yarn").arg("--version").output()?;
 
         if ver.stdout.starts_with(b"1.") {
-            return JavaScript::new_in(Yarn, path);
+            return JavaScript::new_in(Yarn, path, options);
         }
 
         if ver.stdout.starts_with(b"2.") {
-            return JavaScript::new_in(Yarn2, path);
+            return JavaScript::new_in(Yarn2, path, options);
         }
 
         if ver.stdout.starts_with(b"3.") {
-            return JavaScript::new_in(Yarn3, path);
+            return JavaScript::new_in(Yarn3, path, options);
         }
 
         if has_yarn_lock {
@@ -45,11 +45,12 @@ pub fn select(path: PathBuf) -> Result<Box<dyn Engine>> {
         }
     }
 
-    JavaScript::new_in(Npm, path)
+    JavaScript::new_in(Npm, path, options)
 }
 
 /// Engine for JavaScript projects
 pub struct JavaScript<C> {
+    options: Options,
     /// Path to `package.json`
     path: PathBuf,
     /// Contents of `package.json`
@@ -64,12 +65,13 @@ pub struct JavaScript<C> {
 
 impl<C: Client + 'static> JavaScript<C> {
     #[allow(clippy::new_ret_no_self)]
-    fn new(_client: C) -> Result<Box<dyn Engine>> {
-        Self::new_in(_client, std::env::current_dir()?.join("package.json"))
+    fn new(_client: C, options: Options) -> Result<Box<dyn Engine>> {
+        Self::new_in(_client, std::env::current_dir()?.join("package.json"), options)
     }
 
-    fn new_in(_client: C, path: PathBuf) -> Result<Box<dyn Engine>> {
+    fn new_in(_client: C, path: PathBuf, options: Options) -> Result<Box<dyn Engine>> {
         let mut engine = JavaScript {
+            options,
             path,
             pkg: Object::new(),
             name: String::new(),
@@ -126,26 +128,26 @@ impl<C> JavaScript<C> {
 }
 
 impl JavaScript<Npm> {
-    pub fn npm() -> Result<Box<dyn Engine>> {
-        JavaScript::new(Npm)
+    pub fn npm(options: Options) -> Result<Box<dyn Engine>> {
+        JavaScript::new(Npm, options)
     }
 }
 
 impl JavaScript<Yarn> {
-    pub fn yarn() -> Result<Box<dyn Engine>> {
-        JavaScript::new(Yarn)
+    pub fn yarn(options: Options) -> Result<Box<dyn Engine>> {
+        JavaScript::new(Yarn, options)
     }
 }
 
 impl JavaScript<Yarn2> {
-    pub fn yarn2() -> Result<Box<dyn Engine>> {
-        JavaScript::new(Yarn2)
+    pub fn yarn2(options: Options) -> Result<Box<dyn Engine>> {
+        JavaScript::new(Yarn2, options)
     }
 }
 
 impl JavaScript<Yarn3> {
-    pub fn yarn3() -> Result<Box<dyn Engine>> {
-        JavaScript::new(Yarn3)
+    pub fn yarn3(options: Options) -> Result<Box<dyn Engine>> {
+        JavaScript::new(Yarn3, options)
     }
 }
 
@@ -186,7 +188,9 @@ impl<C: Client> Engine for JavaScript<C> {
             Ok(Some(path))
         })?;
 
-        fs::remove_file(self.path.parent().unwrap().join(&archive))?;
+        if !self.options.keep_artefacts {
+            fs::remove_file(self.path.parent().unwrap().join(&archive))?;
+        }
 
         Ok(())
     }
