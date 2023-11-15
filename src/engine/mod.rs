@@ -47,9 +47,8 @@ pub fn by_name(name: &str, options: Options) -> Result<Box<dyn Engine>> {
     match name {
         "npm" => javascript::JavaScript::npm(options),
         "yarn" => javascript::JavaScript::yarn(options),
-        "yarn2" | "yarn-2" => javascript::JavaScript::yarn2(options),
-        "yarn3" | "yarn-3" => javascript::JavaScript::yarn3(options),
-        "yarn-berry" => javascript::JavaScript::yarn3(options),
+        "yarn2" | "yarn-2" | "yarn3" | "yarn-3" | "yarn4" | "yarn-4" | "yarn-berry" =>
+            javascript::JavaScript::yarn_modern(options),
         _ => bail!("no engine named {}", name),
     }
 }

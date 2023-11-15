@@ -32,12 +32,10 @@ pub fn select(path: PathBuf, options: Options) -> Result<Box<dyn Engine>> {
             return JavaScript::new_in(Yarn, path, options);
         }
 
-        if ver.stdout.starts_with(b"2.") {
-            return JavaScript::new_in(Yarn2, path, options);
-        }
-
-        if ver.stdout.starts_with(b"3.") {
-            return JavaScript::new_in(Yarn3, path, options);
+        if ver.stdout.starts_with(b"2.")
+        || ver.stdout.starts_with(b"3.")
+        || ver.stdout.starts_with(b"4.") {
+            return JavaScript::new_in(YarnModern, path, options);
         }
 
         if has_yarn_lock {
@@ -139,15 +137,9 @@ impl JavaScript<Yarn> {
     }
 }
 
-impl JavaScript<Yarn2> {
-    pub fn yarn2(options: Options) -> Result<Box<dyn Engine>> {
-        JavaScript::new(Yarn2, options)
-    }
-}
-
-impl JavaScript<Yarn3> {
-    pub fn yarn3(options: Options) -> Result<Box<dyn Engine>> {
-        JavaScript::new(Yarn3, options)
+impl JavaScript<YarnModern> {
+    pub fn yarn_modern(options: Options) -> Result<Box<dyn Engine>> {
+        JavaScript::new(YarnModern, options)
     }
 }
 
@@ -269,11 +261,10 @@ impl Client for Yarn {
     }
 }
 
-// XXX: Keep in sync with Yarn3
-pub struct Yarn2;
+pub struct YarnModern;
 
-impl Client for Yarn2 {
-    const NAME: &'static str = "Yarn 2";
+impl Client for YarnModern {
+    const NAME: &'static str = "Yarn 2+";
 
     fn prepare(engine: &JavaScript<Self>) -> Result<()> {
         engine.run_script("yarn", "prepublish")?;
@@ -285,30 +276,6 @@ impl Client for Yarn2 {
     }
 
     fn archive_prefix(_: &JavaScript<Self>) -> String {
-        String::from("package")
-    }
-
-    fn postpublish(_engine: &JavaScript<Self>) -> Result<()> {
-        Ok(())
-    }
-}
-
-pub struct Yarn3;
-
-// XXX: Keep in sync with Yarn2
-impl Client for Yarn3 {
-    const NAME: &'static str = "Yarn 3";
-
-    fn prepare(engine: &JavaScript<Self>) -> Result<()> {
-        engine.run_script("yarn", "prepublish")?;
-        Command::new("yarn").arg("pack").wait_or_fail()
-    }
-
-    fn archive_name(_engine: &JavaScript<Self>) -> String {
-        String::from("package.tgz")
-    }
-
-    fn archive_prefix(_engine: &JavaScript<Self>) -> String {
         String::from("package")
     }
 
