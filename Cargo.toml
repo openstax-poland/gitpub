@@ -7,10 +7,10 @@ edition = "2018"
 anyhow = "1.0"
 argh = "0.1"
 ctor = "0.2"
-env_logger = { version = "0.10", default-features = false, features = ["auto-color", "humantime", "color"] }
+env_logger = { version = "0.11", default-features = false, features = ["auto-color", "humantime", "color"] }
 flate2 = "1.0"
-git2 = "0.18"
+git2 = "0.19"
 json = "0.12"
 log = "0.4"
 tar = "0.4"
-termion = "2.0"
+termion = "4.0"
