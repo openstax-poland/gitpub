@@ -1,7 +1,7 @@
 use anyhow::Result;
 use argh::FromArgs;
 use git2::{ObjectType, Repository, Signature};
-use std::{fmt, process::Command};
+use std::process::Command;
 
 use crate::util::CommandEx;
 
@@ -83,19 +83,4 @@ fn main() -> Result<()> {
     output::update("Released", format!("{name} {version} as {tag_name}"))?;
 
     Ok(())
-}
-
-struct S;
-struct R;
-
-impl fmt::Display for S {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}{}", termion::color::LightGreen.fg_str(), termion::style::Bold)
-    }
-}
-
-impl fmt::Display for R {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}{}", termion::color::Reset.fg_str(), termion::style::Reset)
-    }
 }

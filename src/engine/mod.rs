@@ -25,6 +25,7 @@ pub trait Engine {
 }
 
 #[derive(Default)]
+#[non_exhaustive]
 pub struct Options {
     /// Keep build artefacts
     pub keep_artefacts: bool,

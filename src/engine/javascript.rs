@@ -103,7 +103,7 @@ impl<C> JavaScript<C> {
     }
 
     fn run_script(&self, client: &str, script: &str) -> Result<()> {
-        if self.pkg.get("scripts").map_or(false, |scripts| scripts.has_key(script)) {
+        if self.pkg.get("scripts").is_some_and(|scripts| scripts.has_key(script)) {
             Command::new(client).arg(script).wait_or_fail()?;
         }
 
