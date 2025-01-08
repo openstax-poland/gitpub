@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use argh::FromArgs;
 use git2::{ObjectType, Repository, Signature};
 use std::process::Command;
@@ -47,6 +47,7 @@ fn main() -> Result<()> {
     };
 
     let repo = Repository::open_from_env()?;
+    let head = repo.head()?.resolve()?.target().context("HEAD is not a commit")?;
 
     output::message("Using", engine.name())?;
     let name = engine.pkg_name();
@@ -64,7 +65,7 @@ fn main() -> Result<()> {
     output::update("Committing", &status)?;
     let author = repo.signature()?;
     let committer = Signature::now("gitpub", "gitpub")?;
-    let message = format!("Publish {name} {version}");
+    let message = format!("Publish {name} {version}\n\nSource commit: {head}");
     let tag_name = format!("gitpub/{name}@{version}");
     let tree = repo.find_tree(tree)?;
     let commit = repo.commit(None, &author, &committer, &message, &tree, &[])?;
