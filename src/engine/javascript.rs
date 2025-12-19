@@ -27,19 +27,20 @@ pub fn select(path: PathBuf, options: Options) -> Result<Box<dyn Engine>> {
     // yarn.lock exists, use yarn
     if has_yarn_lock || !has_npm_lock {
         let ver = Command::new("yarn").arg("--version").output()?;
+        let ver = String::from_utf8(ver.stdout).context("yarn --version returned invalid data")?;
 
-        if ver.stdout.starts_with(b"1.") {
+        if ver.starts_with("1.") {
             return JavaScript::new_in(Yarn, path, options);
         }
 
-        if ver.stdout.starts_with(b"2.")
-        || ver.stdout.starts_with(b"3.")
-        || ver.stdout.starts_with(b"4.") {
+        if ver.starts_with("2.")
+        || ver.starts_with("3.")
+        || ver.starts_with("4.") {
             return JavaScript::new_in(YarnModern, path, options);
         }
 
         if has_yarn_lock {
-            bail!("found unsupported version of Yarn")
+            bail!("found unsupported version of Yarn ({})", ver.trim());
         }
     }
 
